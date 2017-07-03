@@ -6,8 +6,8 @@
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProjectGuid>{B4FD30DC-B07A-4BAA-8136-A7FAE791A9EF}</ProjectGuid>
     <OutputType>Exe</OutputType>
-    <RootNamespace>BuildVersionUpdater</RootNamespace>
-    <AssemblyName>BuildVersionUpdater</AssemblyName>
+    <RootNamespace>BuildVersionGenerator</RootNamespace>
+    <AssemblyName>BuildVersionGenerator</AssemblyName>
     <TargetFrameworkVersion>v2.0</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
   </PropertyGroup>

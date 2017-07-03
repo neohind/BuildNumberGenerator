@@ -3,7 +3,12 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.26430.13
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BuildVersionUpdater", "BuildVersionGenerator\BuildVersionUpdater.csproj", "{B4FD30DC-B07A-4BAA-8136-A7FAE791A9EF}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "SolutionItems", "SolutionItems", "{144111DC-1A4C-4D50-A15C-CFB7D023502D}"
+	ProjectSection(SolutionItems) = preProject
+		README.md = README.md
+	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BuildVersionGenerator", "BuildVersionGenerator\BuildVersionGenerator.csproj", "{B4FD30DC-B07A-4BAA-8136-A7FAE791A9EF}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
