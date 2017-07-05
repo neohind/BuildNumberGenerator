@@ -19,6 +19,15 @@ namespace BuildVersionGenerator
 
         static void Main(string[] args)
         {
+#if DEBUG  
+            //args = new string[] { @"d:\Works\90.PrivateProjects\WindowsFormsApplication6\", "5", "mj=2", "mn=5"};
+            args = new string[] { @"d:\Works\90.PrivateProjects\Lotto\", "getver" };
+
+#endif
+
+
+
+
             if (args.Length < 2)
             {
                 Console.WriteLine("Not completed enter arguments!");
@@ -30,12 +39,12 @@ namespace BuildVersionGenerator
             string sWorkspacePath = args[0];
             g_sBuildVersion = args[1];
 
-            foreach(string arg in args)
+            foreach (string arg in args)
             {
                 Match match = g_regexArgs.Match(arg);
-                if(match.Success)
-                {                    
-                    switch(match.Groups["name"].Value)
+                if (match.Success)
+                {
+                    switch (match.Groups["name"].Value)
                     {
                         case "mj":
                             g_nMajor = Convert.ToInt32(match.Groups["value"].Value);
@@ -53,20 +62,72 @@ namespace BuildVersionGenerator
 
             if (string.IsNullOrEmpty(g_sBuildVersion))
             {
-                Console.WriteLine("Invaild Build Version - empty");                
+                Console.WriteLine("Invaild Build Version - empty");
                 return;
             }
 
-            if (int.TryParse(g_sBuildVersion, out nBuildVersion) == false)
-            {
-                Console.WriteLine("Invaild Build Version - not integer value");
-                return;
-            }
 
             List<FileInfo> aryAllAssemblyFiles = FindAllFiles(sWorkspacePath);
             g_regex = new Regex(g_sPattern);
-            
-            foreach(FileInfo file in aryAllAssemblyFiles)
+
+            if ("getver".Equals(g_sBuildVersion))
+            {
+                string sLastedVersion = GetLastedVersion(aryAllAssemblyFiles);
+                Console.WriteLine(sLastedVersion);
+            }
+            else if (int.TryParse(g_sBuildVersion, out nBuildVersion))
+            {
+                RewriteVersions(aryAllAssemblyFiles);                
+            }
+            else
+            {
+                Console.WriteLine("Invaild Build Version - not integer value");                
+            }
+        }
+
+        static string GetLastedVersion(List<FileInfo> aryAllAssemblyFiles)
+        {
+            Version lastedVersion = new Version(0, 0, 0, 0);
+
+            foreach (FileInfo file in aryAllAssemblyFiles)
+            {
+                string sAllContents = string.Empty;
+                try
+                {
+                    using (StreamReader reader = File.OpenText(file.FullName))
+                    {
+                        sAllContents = reader.ReadToEnd();
+                        Match m = g_regex.Match(sAllContents);
+                        if (m.Success)
+                        {
+                            string sMajor = m.Groups["mj"].Value;
+                            string sMinor = m.Groups["mn"].Value;
+                            string sRevision = m.Groups["rv"].Value;
+                            string sBuild = m.Groups["bd"].Value;
+
+                            Version version = new Version(Convert.ToInt32(sMajor), Convert.ToInt32(sMinor), Convert.ToInt32(sRevision), Convert.ToInt32(sBuild));
+                            if(version > lastedVersion)                            
+                                lastedVersion = version;
+                        }
+                        else
+                        {
+                            sAllContents = string.Empty;
+                        }
+                    }
+                }
+                catch
+                {
+                }
+            }
+
+            return lastedVersion.ToString();
+        }
+
+
+
+        static void RewriteVersions(List<FileInfo> aryAllAssemblyFiles)
+        {
+            foreach (FileInfo file in aryAllAssemblyFiles)
             {
                 string sAllContents = string.Empty;
                 try
@@ -82,13 +143,13 @@ namespace BuildVersionGenerator
                         {
                             sAllContents = string.Empty;
                         }
-                    }                 
+                    }
                 }
                 catch
                 {
                 }
 
-                if(string.IsNullOrEmpty(sAllContents) == false)
+                if (string.IsNullOrEmpty(sAllContents) == false)
                 {
                     try
                     {
@@ -137,12 +198,15 @@ namespace BuildVersionGenerator
 
         static void FindAllFiles(DirectoryInfo curDir, ref List<FileInfo> aryResults)
         {
-            FileInfo [] findFiles = curDir.GetFiles("AssemblyInfo.cs");
-            aryResults.AddRange(findFiles);
-
-            foreach(DirectoryInfo childDir in curDir.GetDirectories())
+            if (curDir.Exists)
             {
-                FindAllFiles(childDir, ref aryResults);
+                FileInfo[] findFiles = curDir.GetFiles("AssemblyInfo.cs");
+                aryResults.AddRange(findFiles);
+
+                foreach (DirectoryInfo childDir in curDir.GetDirectories())
+                {
+                    FindAllFiles(childDir, ref aryResults);
+                }
             }
         }
     }
