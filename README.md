@@ -2,7 +2,8 @@
 이 프로그램은 .NET 응용프로그램의 File Version을 일괄적으로 수정하는 프로그램이다.
 특정 경로 하위에 있는 모든 AssemblyInfo.cs 파일에서 AssemblyFileInfo 값을 수정한다.
 기본적으로 버전의 Build 부분만 수정하게 되어 있으나, 추가적인 옵션을 이용하여,
-Major, Minor, Revision 부분도 수정할 수 있다.
+Major, Minor, Build , Revision 부분도 수정할 수 있다.
+만일 Clickonce가 지원되는 프로젝트인 경우 csconf 파일을 읽어와 해당 버전을 수정할 수 있도록 한다.
 
 프로그램의 용도는 Jenkins와 같은 빌드 서버 뿐만 아니라, Visual Studio의 External Tool에 등록하여 사용할 수 있다.
 CUI 기반이기 때문에, 외부 실행형으로 적절하게 활용이 가능하다.
