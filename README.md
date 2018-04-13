@@ -10,20 +10,27 @@ CUI 기반이기 때문에, 외부 실행형으로 적절하게 활용이 가능하다.
 
 USAGE ( by Command Line )
 
-BuildVersionGenerator.exe "{Solution Full Path Name}" {build_number} [[rv=1] [mj=1] [mn=0]]
+Arguments
+   Type#1 :  all {solution Path} [mj={n}][mn={n}][bv={n}][rv={n}]
+   Type#2 :  project {solution Path} {project name} [mj={n}][mn={n}][bv={n}][rv={n}]
+   Type#3 :  get {solution Path} {project name} [mj|mn|bv|rv]
+   Type#4 :  getpart {solution Path} {project name} [mj|mn|bv|rv]
 
-- {Solution Full Path Name} : Full path name of solution path. ex) D:\Works\Projects\TestApp
-- {build_number} : In Jenkins, The build has any number of build number. The valus is representated by "%BUILD_NUMBER%"
-- mj : [Optional] Major Number. File Version composited Major.Minor.Revision. This value is replace Major version.
-- mn : [Optional] Minor Number. File Version composited Major.Minor.Revision. This value is replace Minor version.
-- rv : [Optional] Revision Number. File Version composited Major.Minor.Revision. This value is replace revision version.
+   all : Update all assembly, fileversion update and publish version
+   project : Update specific project settings that is assembly, fileversion update and publish version.
+   get : Get version by level. ex) 1.2.3.4 :  mj -> 1. / mn -> 1.2. / bv -> 1.2.3. / rv -> 1.2.3.4
+   getpart : Get part version by level. ex) 1.2.3.4 :  mj -> 1 / mn -> 2 / bv -> 3 / rv -> 4
+   - {solution Path} : Solution folder full path name
+   - {Project Name} : Project Name. .csproj Filename
+   - mj : Major Version
+   - mn : Minor Version
+   - bv : Build Version
+   - rv : Revision Version
 
-In Visual Studio External Tool Option
- - Title : Build Version Generator
- - Command : {applocaltion path : BuildVersionGenerator 파일 위치}\BuildVersionGenerator.exe
- - Aguments : "$(SolutionDir)" 0 mj=1 mn=0 rv=0
- - Inital Directory : $(SolutionDir)
- - Check to Prompt arguments and Close on exit 
 
+Type#1 : BuildVersionGenerator.exe all "C:\Projects\TestProj" mj=1 mn=0 bv=16 rv =1
+Type#2 : BuildVersionGenerator.exe project "C:\Projects\TestProj" mainapp mj=1 mn=0 bv=16 rv=1
+Type#2 : BuildVersionGenerator.exe get "C:\Projects\TestProj" mainapp bv
+Type#2 : BuildVersionGenerator.exe getpart "C:\Projects\TestProj" Test  mainapp mj
 
 

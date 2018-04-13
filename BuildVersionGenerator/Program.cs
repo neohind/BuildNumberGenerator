@@ -1,213 +1,104 @@
-﻿using System;
+﻿
+using BuildVersionGenerator.Command;
+using System;
 using System.Collections.Generic;
-using System.IO;
-using System.Text;
-using System.Text.RegularExpressions;
 
 namespace BuildVersionGenerator
 {
     class Program
     {
-        static string g_sPattern = "\\[assembly: AssemblyFileVersion\\(\"(?<mj>[0-9]+)\\.(?<mn>[0-9]+)\\.(?<rv>[0-9*]+)[\\.]*(?<bd>[0-9]*)\"\\)\\]";
-        static Regex g_regex = null;
-        static string g_sBuildVersion = string.Empty;
-        static int g_nMajor = -1;
-        static int g_nMinor = -1;
-        static int g_nRevision = -1;
-
-        static Regex g_regexArgs = new Regex("(?<name>[A-Za-z]+)\\=(?<value>[0-9]+)");
-
-        static void Main(string[] args)
+        static void Main(string[]args)
         {
-#if DEBUG  
-            //args = new string[] { @"d:\Works\90.PrivateProjects\WindowsFormsApplication6\", "5", "mj=2", "mn=5"};
-            args = new string[] { @"d:\Works\90.PrivateProjects\Lotto\", "getver" };
-
-#endif
+            List<string> aryArgs = ParseArgs();
 
 
+            //foreach (string s in aryArgs)
+            //    Console.WriteLine(s);
+            //args = new string[] { "all", @"d:\Works\90.PrivateProjects\GetFileVersion\", "rv=15" };
+            //aryArgs.Clear();
+            //aryArgs.Add("get");
+            //aryArgs.Add(@"d:\Works\20.UMMC\Client\");
+            //aryArgs.Add("UMMs");
+            //aryArgs.Add("mj");
 
+            bool bCheckArguments = aryArgs.Count > 1;
 
-            if (args.Length < 2)
+            if (bCheckArguments)
+            {
+
+                string sCommand = aryArgs[0];
+                CmdBase cmd = CmdBase.CreateInstance(sCommand);
+                if (cmd != null)
+                {
+                    bCheckArguments = cmd.ParseArguments(aryArgs);
+                    if (bCheckArguments)
+                    {
+                        cmd.Execute();
+                    }
+                }
+            }
+
+            if (bCheckArguments == false)
             {
                 Console.WriteLine("Not completed enter arguments!");
-                Console.WriteLine("Arg#1 Workspace Path, arg#2 BuildVersion");
-                return;
-            }
-
-            int nBuildVersion = 0;
-            string sWorkspacePath = args[0];
-            g_sBuildVersion = args[1];
-
-            foreach (string arg in args)
-            {
-                Match match = g_regexArgs.Match(arg);
-                if (match.Success)
-                {
-                    switch (match.Groups["name"].Value)
-                    {
-                        case "mj":
-                            g_nMajor = Convert.ToInt32(match.Groups["value"].Value);
-                            break;
-                        case "mn":
-                            g_nMinor = Convert.ToInt32(match.Groups["value"].Value);
-                            break;
-                        case "rv":
-                            g_nRevision = Convert.ToInt32(match.Groups["value"].Value);
-                            break;
-                    }
-                }
-            }
-
-
-            if (string.IsNullOrEmpty(g_sBuildVersion))
-            {
-                Console.WriteLine("Invaild Build Version - empty");
-                return;
-            }
-
-
-            List<FileInfo> aryAllAssemblyFiles = FindAllFiles(sWorkspacePath);
-            g_regex = new Regex(g_sPattern);
-
-            if ("getver".Equals(g_sBuildVersion))
-            {
-                string sLastedVersion = GetLastedVersion(aryAllAssemblyFiles);
-                Console.WriteLine(sLastedVersion);
-            }
-            else if (int.TryParse(g_sBuildVersion, out nBuildVersion))
-            {
-                RewriteVersions(aryAllAssemblyFiles);                
-            }
-            else
-            {
-                Console.WriteLine("Invaild Build Version - not integer value");                
+                Console.WriteLine("Arguments");
+                Console.WriteLine("   Type#1 :  all {solution Path} [mj={n}][mn={n}][bv={n}][rv={n}]");
+                Console.WriteLine("   Type#2 :  project {solution Path} {project name} [mj={n}][mn={n}][bv={n}][rv={n}]");
+                Console.WriteLine("   Type#3 :  get {solution Path} {project name} [mj|mn|bv|rv]");
+                Console.WriteLine("   Type#4 :  getpart {solution Path} {project name} [mj|mn|bv|rv]");
+                Console.WriteLine();
+                Console.WriteLine("   all : Update all assembly, fileversion update and publish version");
+                Console.WriteLine("   project : Update specific project settings that is assembly, fileversion update and publish version.");
+                Console.WriteLine("   get : Get version by level. ex) 1.2.3.4 :  mj -> 1. / mn -> 1.2. / bv -> 1.2.3. / rv -> 1.2.3.4");
+                Console.WriteLine("   getpart : Get part version by level. ex) 1.2.3.4 :  mj -> 1 / mn -> 2 / bv -> 3 / rv -> 4");
+                Console.WriteLine("   - {solution Path} : Solution folder full path name");
+                Console.WriteLine("   - {Project Name} : Project Name. .csproj Filename");
+                Console.WriteLine("   - mj : Major Version");
+                Console.WriteLine("   - mn : Minor Version");
+                Console.WriteLine("   - bv : Build Version");
+                Console.WriteLine("   - rv : Revision Version");
+                Console.WriteLine();
+                Console.WriteLine();
+                Console.WriteLine("Type#1 : BuildVersionGenerator.exe all \"C:\\Projects\\TestProj\" mj=1 mn=0 bv=16 rv =1");
+                Console.WriteLine("Type#2 : BuildVersionGenerator.exe project \"C:\\Projects\\TestProj\" mainapp mj=1 mn=0 bv=16 rv=1");
+                Console.WriteLine("Type#2 : BuildVersionGenerator.exe get \"C:\\Projects\\TestProj\" mainapp bv");
+                Console.WriteLine("Type#2 : BuildVersionGenerator.exe getpart \"C:\\Projects\\TestProj\" Test  mainapp mj");
+                
             }
         }
 
-        static string GetLastedVersion(List<FileInfo> aryAllAssemblyFiles)
+        static List<string> ParseArgs()
         {
-            Version lastedVersion = new Version(0, 0, 0, 0);
+            List<string> aryArgs = new List<string>();
 
-            foreach (FileInfo file in aryAllAssemblyFiles)
+            int nIndex = 0;
+            string sArg = Environment.CommandLine;
+            nIndex = sArg.IndexOf(".exe");
+            sArg = sArg.Substring(nIndex + 4);
+            sArg = sArg.Trim();
+
+            
+            string sCurArg = string.Empty;
+            for (int i = 0; i < sArg.Length; i++)
             {
-                string sAllContents = string.Empty;
-                try
+                char ch = sArg[i];
+                if (ch == ' ')
                 {
-                    using (StreamReader reader = File.OpenText(file.FullName))
-                    {
-                        sAllContents = reader.ReadToEnd();
-                        Match m = g_regex.Match(sAllContents);
-                        if (m.Success)
-                        {
-                            string sMajor = m.Groups["mj"].Value;
-                            string sMinor = m.Groups["mn"].Value;
-                            string sRevision = m.Groups["rv"].Value;
-                            string sBuild = m.Groups["bd"].Value;
-
-                            Version version = new Version(Convert.ToInt32(sMajor), Convert.ToInt32(sMinor), Convert.ToInt32(sRevision), Convert.ToInt32(sBuild));
-                            if(version > lastedVersion)                            
-                                lastedVersion = version;
-                        }
-                        else
-                        {
-                            sAllContents = string.Empty;
-                        }
-                    }
+                    sCurArg = sCurArg.Trim();
+                    if(string.IsNullOrEmpty(sCurArg) == false)
+                        aryArgs.Add(sCurArg);
+                    sCurArg = string.Empty;
                 }
-                catch
-                {
-                }
+                else if (ch == '\"')
+                    continue;
+                sCurArg += ch;
             }
+            sCurArg = sCurArg.Trim();
+            if (string.IsNullOrEmpty(sCurArg) == false)
+                aryArgs.Add(sCurArg);
+            
+            return aryArgs;
 
-            return lastedVersion.ToString();
-        }
-
-
-
-        static void RewriteVersions(List<FileInfo> aryAllAssemblyFiles)
-        {
-            foreach (FileInfo file in aryAllAssemblyFiles)
-            {
-                string sAllContents = string.Empty;
-                try
-                {
-                    using (StreamReader reader = File.OpenText(file.FullName))
-                    {
-                        sAllContents = reader.ReadToEnd();
-                        if (g_regex.IsMatch(sAllContents))
-                        {
-                            sAllContents = g_regex.Replace(sAllContents, new MatchEvaluator(matchEval));
-                        }
-                        else
-                        {
-                            sAllContents = string.Empty;
-                        }
-                    }
-                }
-                catch
-                {
-                }
-
-                if (string.IsNullOrEmpty(sAllContents) == false)
-                {
-                    try
-                    {
-                        file.Delete();
-                        using (StreamWriter writer = File.CreateText(file.FullName))
-                        {
-                            writer.Write(sAllContents);
-                        }
-                    }
-                    catch
-                    {
-                    }
-                }
-            }
-        }
-
-        static string matchEval(Match m)
-        {
-            string sMajor = m.Groups["mj"].Value;
-            string sMinor = m.Groups["mn"].Value;
-            string sRevision = m.Groups["rv"].Value;
-
-            if (g_nMajor > 0)
-                sMajor = g_nMajor.ToString();
-
-            if (g_nMinor > 0)
-                sMinor = g_nMinor.ToString();
-
-            if (g_nRevision > 0)
-                sRevision = g_nRevision.ToString();
-
-            string sNewText = string.Format("[assembly: AssemblyFileVersion(\"{0}.{1}.{2}.{3}\")]"
-                , sMajor, sMinor, sRevision, g_sBuildVersion);
-
-            return sNewText;
-        }
-
-
-        static List<FileInfo> FindAllFiles(string sPath)
-        {
-            List<FileInfo> aryResult = new List<FileInfo>();
-            DirectoryInfo curDir = new DirectoryInfo(sPath);
-            FindAllFiles(curDir, ref aryResult);
-            return aryResult;
-        }
-
-        static void FindAllFiles(DirectoryInfo curDir, ref List<FileInfo> aryResults)
-        {
-            if (curDir.Exists)
-            {
-                FileInfo[] findFiles = curDir.GetFiles("AssemblyInfo.cs");
-                aryResults.AddRange(findFiles);
-
-                foreach (DirectoryInfo childDir in curDir.GetDirectories())
-                {
-                    FindAllFiles(childDir, ref aryResults);
-                }
-            }
         }
     }
 }
