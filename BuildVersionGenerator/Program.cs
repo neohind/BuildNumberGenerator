@@ -73,19 +73,27 @@ namespace BuildVersionGenerator
 
             int nIndex = 0;
             string sArg = Environment.CommandLine;
-            nIndex = sArg.IndexOf(".exe");
-            sArg = sArg.Substring(nIndex + 4);
+            nIndex = sArg.IndexOf(".exe") + 4;
+            if (sArg.Length > nIndex && sArg[nIndex] == '\"')
+                nIndex = nIndex + 1;
+            sArg = sArg.Substring(nIndex);
             sArg = sArg.Trim();
 
-            
+
             string sCurArg = string.Empty;
+            bool bOpen = false;
             for (int i = 0; i < sArg.Length; i++)
             {
                 char ch = sArg[i];
-                if (ch == ' ')
+                if (ch == '\"')
+                {
+                    bOpen = !bOpen;
+                }
+
+                if (ch == ' ' && bOpen == false)
                 {
                     sCurArg = sCurArg.Trim();
-                    if(string.IsNullOrEmpty(sCurArg) == false)
+                    if (string.IsNullOrEmpty(sCurArg) == false)
                         aryArgs.Add(sCurArg);
                     sCurArg = string.Empty;
                 }
@@ -93,12 +101,12 @@ namespace BuildVersionGenerator
                     continue;
                 sCurArg += ch;
             }
+
             sCurArg = sCurArg.Trim();
             if (string.IsNullOrEmpty(sCurArg) == false)
                 aryArgs.Add(sCurArg);
-            
-            return aryArgs;
 
+            return aryArgs;
         }
     }
 }
